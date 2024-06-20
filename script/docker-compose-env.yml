@@ -24,6 +24,12 @@ services:
   prometheus:
     image: bitnami/prometheus:2.46.0
     container_name: prometheus
+    volumes:
+      - ./conf/Prometheus_conf/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./data/prometheus/data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
     restart: always
     user: root
     ports:
@@ -38,6 +44,8 @@ services:
     hostname: grafana
     user: root
     restart: always
+    volumes:
+      - ./data/grafana/data:/var/lib/grafana
     ports:
       - "8092:3000"
     networks:
@@ -64,10 +72,12 @@ services:
     image: docker.io/bitnami/kafka:3.5
     container_name: kafka
     hostname: kafka
+    networks:
+      - liujun_net
     ports:
       - "9092:9092"
     volumes:
-      - "./data/kafka:/bitnami/kafka"
+      - "./data/kafkaData:/bitnami/kafka"
     environment:
       # KRaft settings
       KAFKA_CFG_NODE_ID: 0

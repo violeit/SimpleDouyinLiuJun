@@ -1,22 +1,29 @@
 Name: user
-Host: 127.0.0.1
+Host: 0.0.0.0
 Port: 8081
+maxConns: 8000 # 请求最大连接数
+Timeout: 3000 # api请求超时时间
+CpuThreshold: 800 # cpu线程阈值
+
+DevServer:
+  Enabled: true
+  Port: 8071
 
 UserRpcConf:
   Etcd:
     Hosts:
       - 127.0.0.1:8090
     Key: userRpc
-#    Pass: liujun
-#    User: root
 
 Log:
   ServiceName: user
   Mode: file
-  Path: logs/ordinary-log/user
-  Level: error
+  Path: logs/ordinary-log/user/api
+  Level: info
   Encoding: plain
   KeepDays: 7
+
+
 
 
 ContentRpcConf:
@@ -24,8 +31,6 @@ ContentRpcConf:
     Hosts:
       - 127.0.0.1:8090
     Key: contentRpc
-#    Pass: liujun
-#    User: root
 
 LoginLogKqPusherConf:
   Brokers:

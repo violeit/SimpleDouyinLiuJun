@@ -8,6 +8,7 @@ import (
 	"doushen_by_liujun/service/user/api/internal/svc"
 	"doushen_by_liujun/service/user/api/internal/types"
 	"doushen_by_liujun/service/user/rpc/pb"
+	"fmt"
 	"github.com/zeromicro/go-zero/core/logx"
 	"strconv"
 )
@@ -27,11 +28,13 @@ func NewFollowListLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Follow
 }
 
 func (l *FollowListLogic) FollowList(req *types.FollowListReq) (resp *types.FollowListResp, err error) {
+	l.Logger.Info(req)
 	_, e := util.ParseToken(req.Token)
 	if e != nil {
+		l.Logger.Error(e)
 		return &types.FollowListResp{
-			StatusCode: common.TOKEN_EXPIRE_ERROR,
-			StatusMsg:  common.MapErrMsg(common.TOKEN_EXPIRE_ERROR),
+			StatusCode: common.TokenExpireError,
+			StatusMsg:  common.MapErrMsg(common.TokenExpireError),
 			FollowList: nil,
 		}, nil
 	}
@@ -39,9 +42,10 @@ func (l *FollowListLogic) FollowList(req *types.FollowListReq) (resp *types.Foll
 		Id: req.UserId,
 	})
 	if e != nil {
+		l.Logger.Error(e)
 		return &types.FollowListResp{
-			StatusCode: common.DB_ERROR,
-			StatusMsg:  common.MapErrMsg(common.DB_ERROR),
+			StatusCode: common.DbError,
+			StatusMsg:  common.MapErrMsg(common.DbError),
 			FollowList: nil,
 		}, nil
 	}
@@ -60,10 +64,18 @@ func (l *FollowListLogic) FollowList(req *types.FollowListReq) (resp *types.Foll
 				UserId: item.Id,
 			})
 			if err != nil {
-				return nil, err
+				l.Logger.Error(err)
+				return &types.FollowListResp{
+					StatusCode: common.DbError,
+					StatusMsg:  common.MapErrMsg(common.DbError),
+					FollowList: nil,
+				}, nil
 			}
 			workCount = int(ans.WorkCount)
-			redisClient.SetCtx(l.ctx, common.CntCacheUserWorkPrefix+strconv.Itoa(int(item.Id)), strconv.Itoa(workCount))
+			err = redisClient.SetCtx(l.ctx, common.CntCacheUserWorkPrefix+strconv.Itoa(int(item.Id)), strconv.Itoa(workCount))
+			if err != nil {
+				fmt.Println("redis set err")
+			}
 		}
 		favoriteCountRecord, _ := redisClient.GetCtx(l.ctx, common.CntCacheUserLikePrefix+strconv.Itoa(int(item.Id)))
 		if len(favoriteCountRecord) != 0 { //等于0 代表没有记录，查表并存储到redis
@@ -74,10 +86,18 @@ func (l *FollowListLogic) FollowList(req *types.FollowListReq) (resp *types.Foll
 				UserId: item.Id,
 			})
 			if err != nil {
-				return nil, err
+				l.Logger.Error(err)
+				return &types.FollowListResp{
+					StatusCode: common.DbError,
+					StatusMsg:  common.MapErrMsg(common.DbError),
+					FollowList: nil,
+				}, nil
 			}
 			favoriteCount = int(ans.FavoriteCount)
-			redisClient.SetCtx(l.ctx, common.CntCacheUserLikePrefix+strconv.Itoa(int(item.Id)), strconv.Itoa(favoriteCount))
+			err = redisClient.SetCtx(l.ctx, common.CntCacheUserLikePrefix+strconv.Itoa(int(item.Id)), strconv.Itoa(favoriteCount))
+			if err != nil {
+				fmt.Printf("redis set err%v\n", err)
+			}
 		}
 		totalFavoritedRecord, _ := redisClient.GetCtx(l.ctx, common.CntCacheUserLikedPrefix+strconv.Itoa(int(item.Id)))
 		if len(totalFavoritedRecord) != 0 { //等于0 代表没有记录，查表并存储到redis
@@ -88,10 +108,18 @@ func (l *FollowListLogic) FollowList(req *types.FollowListReq) (resp *types.Foll
 				UserId: item.Id,
 			})
 			if err != nil {
-				return nil, err
+				l.Logger.Error(err)
+				return &types.FollowListResp{
+					StatusCode: common.DbError,
+					StatusMsg:  common.MapErrMsg(common.DbError),
+					FollowList: nil,
+				}, nil
 			}
 			totalFavorited = int(ans.LikedCnt)
-			redisClient.SetCtx(l.ctx, common.CntCacheUserLikedPrefix+strconv.Itoa(int(item.Id)), strconv.Itoa(totalFavorited))
+			err = redisClient.SetCtx(l.ctx, common.CntCacheUserLikedPrefix+strconv.Itoa(int(item.Id)), strconv.Itoa(totalFavorited))
+			if err != nil {
+				fmt.Printf("redis set err %v\n", err)
+			}
 		}
 		user := types.User{
 			UserId:          item.Id,

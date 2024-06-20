@@ -1,10 +1,23 @@
 Name: loginConsumer
 
+DevServer:
+  Enabled: true
+  Port: 8079
+
+
 Brokers:
   - 127.0.0.1:9092
 Group: loginLog
 Topic: loginLog
 Offset: first
-Consumers: 1
+
+
+Log:
+  ServiceName: loginConsumer
+  Mode: file
+  Path: logs/ordinary-log/loginConsumer
+  Level: error
+  Encoding: plain
+  KeepDays: 7
 
 

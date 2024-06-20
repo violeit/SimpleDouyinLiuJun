@@ -22,7 +22,6 @@ func NewChatServer(svcCtx *svc.ServiceContext) *ChatServer {
 	}
 }
 
-// -----------------------鑱婂ぉ淇℃伅-----------------------
 func (s *ChatServer) AddChatMessage(ctx context.Context, in *pb.AddChatMessageReq) (*pb.AddChatMessageResp, error) {
 	l := logic.NewAddChatMessageLogic(ctx, s.svcCtx)
 	return l.AddChatMessage(in)
@@ -31,9 +30,4 @@ func (s *ChatServer) AddChatMessage(ctx context.Context, in *pb.AddChatMessageRe
 func (s *ChatServer) GetChatMessageById(ctx context.Context, in *pb.GetChatMessageByIdReq) (*pb.GetChatMessageByIdResp, error) {
 	l := logic.NewGetChatMessageByIdLogic(ctx, s.svcCtx)
 	return l.GetChatMessageById(in)
-}
-
-func (s *ChatServer) SearchChatMessage(ctx context.Context, in *pb.SearchChatMessageReq) (*pb.SearchChatMessageResp, error) {
-	l := logic.NewSearchChatMessageLogic(ctx, s.svcCtx)
-	return l.SearchChatMessage(in)
 }

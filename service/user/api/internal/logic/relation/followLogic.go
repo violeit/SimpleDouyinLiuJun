@@ -31,11 +31,13 @@ func NewFollowLogic(ctx context.Context, svcCtx *svc.ServiceContext) *FollowLogi
 }
 
 func (l *FollowLogic) Follow(req *types.FollowReq) (resp *types.FollowResp, err error) {
+	l.Logger.Info(req)
 	logger, e := util.ParseToken(req.Token)
 	if e != nil {
+		l.Logger.Error(e)
 		return &types.FollowResp{
-			StatusCode: common.TOKEN_EXPIRE_ERROR,
-			StatusMsg:  common.MapErrMsg(common.TOKEN_EXPIRE_ERROR),
+			StatusCode: common.TokenExpireError,
+			StatusMsg:  common.MapErrMsg(common.TokenExpireError),
 		}, nil
 	}
 	//修正redis中数据，判断是关注还是取消关注
@@ -44,7 +46,7 @@ func (l *FollowLogic) Follow(req *types.FollowReq) (resp *types.FollowResp, err 
 	followerKey := common.FollowerNum + strconv.Itoa(int(req.ToUserId))
 	followRecord, _ := redisClient.GetCtx(l.ctx, followKey)
 	followerRecord, _ := redisClient.GetCtx(l.ctx, followerKey)
-	rand.Seed(time.Now().UnixNano())
+	//rand.Seed(time.Now().UnixNano())
 	expiration := 3000 + rand.Intn(600)
 	if req.ActionType == 1 {
 		if len(followRecord) != 0 { //有记录更新一下计数，没有就算了,还是等查用户信息时再查表
@@ -147,9 +149,10 @@ func (l *FollowLogic) Follow(req *types.FollowReq) (resp *types.FollowResp, err 
 				FollowId: strconv.FormatInt(req.ToUserId, 10),
 			})
 			if err != nil {
+				l.Logger.Error(err)
 				return &types.FollowResp{
-					StatusCode: common.DB_ERROR,
-					StatusMsg:  common.MapErrMsg(common.DB_ERROR),
+					StatusCode: common.DbError,
+					StatusMsg:  common.MapErrMsg(common.DbError),
 				}, nil
 			}
 			return &types.FollowResp{
@@ -162,9 +165,10 @@ func (l *FollowLogic) Follow(req *types.FollowReq) (resp *types.FollowResp, err 
 				FollowId: strconv.FormatInt(req.ToUserId, 10),
 			})
 			if err != nil {
+				l.Logger.Error(err)
 				return &types.FollowResp{
-					StatusCode: common.DB_ERROR,
-					StatusMsg:  common.MapErrMsg(common.DB_ERROR),
+					StatusCode: common.DbError,
+					StatusMsg:  common.MapErrMsg(common.DbError),
 				}, nil
 			}
 			return &types.FollowResp{

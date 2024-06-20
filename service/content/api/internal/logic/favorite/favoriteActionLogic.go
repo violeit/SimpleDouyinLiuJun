@@ -32,15 +32,16 @@ func (l *FavoriteActionLogic) FavoriteAction(req *types.FavoriteActionReq) (resp
 	/*
 		Author：    刘洋
 		Function：  点赞、取消点赞（ ActionType=1 点赞 ，ActionType=2 取消 ）
-		Update：    08.21
+		Update：    08.28 对进入逻辑、异常 加log
 	*/
+	l.Logger.Info(req)
 	// 1.根据 token 获取 userid
 	parsToken, err0 := util.ParseToken(req.Token)
 	if err0 != nil {
-		// 返回token失效错误
+		l.Logger.Error(err0)
 		return &types.FavoriteActionResp{
-			StatusCode: common.TOKEN_EXPIRE_ERROR,
-			StatusMsg:  common.MapErrMsg(common.TOKEN_EXPIRE_ERROR),
+			StatusCode: common.TokenExpireError,
+			StatusMsg:  common.MapErrMsg(common.TokenExpireError),
 		}, nil
 	}
 
@@ -55,9 +56,10 @@ func (l *FavoriteActionLogic) FavoriteAction(req *types.FavoriteActionReq) (resp
 		// 3.1 查询 redis 点赞记录
 		likeRecord, err1 := redisClient.HgetCtx(l.ctx, videoLikedKey, strconv.FormatInt(parsToken.UserID, 10))
 		if err1 != nil && err1 != redis.Nil {
+			l.Logger.Error(err1)
 			return &types.FavoriteActionResp{
-				StatusCode: common.REDIS_ERROR,
-				StatusMsg:  common.MapErrMsg(common.REDIS_ERROR),
+				StatusCode: common.RedisError,
+				StatusMsg:  common.MapErrMsg(common.RedisError),
 			}, nil
 		}
 		if len(likeRecord) != 0 && likeRecord == "0" {
@@ -93,9 +95,10 @@ func (l *FavoriteActionLogic) FavoriteAction(req *types.FavoriteActionReq) (resp
 			//})
 			if e != nil && e != redis.Nil {
 				// pipeline 操作失败
+				l.Logger.Error(e)
 				return &types.FavoriteActionResp{
-					StatusCode: common.REDIS_ERROR,
-					StatusMsg:  common.MapErrMsg(common.REDIS_ERROR),
+					StatusCode: common.RedisError,
+					StatusMsg:  common.MapErrMsg(common.RedisError),
 				}, nil
 			}
 			fmt.Println("执行pipeline成功")
@@ -107,9 +110,10 @@ func (l *FavoriteActionLogic) FavoriteAction(req *types.FavoriteActionReq) (resp
 		// 5.1 查询 redis 点赞记录
 		likeRecord, err1 := redisClient.HgetCtx(l.ctx, videoLikedKey, strconv.FormatInt(parsToken.UserID, 10))
 		if err1 != nil && err1 != redis.Nil {
+			l.Logger.Error(err1)
 			return &types.FavoriteActionResp{
-				StatusCode: common.REDIS_ERROR,
-				StatusMsg:  common.MapErrMsg(common.REDIS_ERROR),
+				StatusCode: common.RedisError,
+				StatusMsg:  common.MapErrMsg(common.RedisError),
 			}, nil
 		}
 		if len(likeRecord) != 0 && likeRecord == "1" {
@@ -145,9 +149,10 @@ func (l *FavoriteActionLogic) FavoriteAction(req *types.FavoriteActionReq) (resp
 			//})
 			if e != nil && e != redis.Nil {
 				// pipeline 操作失败
+				l.Logger.Error(e)
 				return &types.FavoriteActionResp{
-					StatusCode: common.REDIS_ERROR,
-					StatusMsg:  common.MapErrMsg(common.REDIS_ERROR),
+					StatusCode: common.RedisError,
+					StatusMsg:  common.MapErrMsg(common.RedisError),
 				}, nil
 			}
 			fmt.Println("执行pipeline成功")

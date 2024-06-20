@@ -2,11 +2,11 @@ package logic
 
 import (
 	"context"
+	constants "doushen_by_liujun/internal/common"
 	"doushen_by_liujun/internal/util"
 	"doushen_by_liujun/service/content/rpc/internal/model"
 	"errors"
 	"fmt"
-	"log"
 	"time"
 
 	"doushen_by_liujun/service/content/rpc/internal/svc"
@@ -30,15 +30,17 @@ func NewAddFavoriteLogic(ctx context.Context, svcCtx *svc.ServiceContext) *AddFa
 }
 
 func (l *AddFavoriteLogic) AddFavorite(in *pb.AddFavoriteReq) (*pb.AddFavoriteResp, error) {
-
+	/*
+		Author：    刘洋
+		Function：  向 favorite 表添加点赞信息
+		Update：    08.28 对进入逻辑 加log
+	*/
+	l.Logger.Info("AddFavorite方法请求参数：", in)
 	//1.根据（userId、videoId）查找 favorite 表
 	favorite, err0 := l.svcCtx.FavoriteModel.FindFavoriteByUserIdVideoId(l.ctx, in.UserId, in.VideoId)
 	fmt.Println(favorite)
-	if err0 != nil && err0 != model.ErrNotFound {
+	if err0 != nil && !errors.Is(err0, model.ErrNotFound) {
 		return nil, errors.New("rpc-AddFavorite-数据查询失败")
-	}
-	if err := l.svcCtx.KqPusherClient.Push("content_rpc_addFavoriteLogic_AddFavorite_FindFavoriteByUserIdVideoId_false"); err != nil {
-		log.Fatal(err)
 	}
 	//2.favorite记录存在，则置 isDelete=0 选项到 favorite 表项
 	if favorite != nil {
@@ -53,19 +55,13 @@ func (l *AddFavoriteLogic) AddFavorite(in *pb.AddFavoriteReq) (*pb.AddFavoriteRe
 		if err != nil {
 			return nil, errors.New("rpc-AddFavorite-新增点赞数据失败")
 		}
-		if err := l.svcCtx.KqPusherClient.Push("content_rpc_addFavoriteLogic_AddFavorite_Update_false"); err != nil {
-			log.Fatal(err)
-		}
 	} else {
 		//3.favorite记录不存在，则新增点赞信息到 favorite 表项
 		fmt.Println("没查到")
 		//雪花算法生成id
-		snowflake, err1 := util.NewSnowflake(3)
+		snowflake, err1 := util.NewSnowflake(constants.ContentRpcMachineId)
 		if err1 != nil {
 			return nil, errors.New("rpc-AddFavorite-新增评论，snowflake生成id失败")
-		}
-		if err := l.svcCtx.KqPusherClient.Push("content_rpc_addFavoriteLogic_AddFavorite_NewSnowflake_false"); err != nil {
-			log.Fatal(err)
 		}
 		snowId := snowflake.Generate()
 		_, err := l.svcCtx.FavoriteModel.Insert(l.ctx, &model.Favorite{
@@ -79,16 +75,8 @@ func (l *AddFavoriteLogic) AddFavorite(in *pb.AddFavoriteReq) (*pb.AddFavoriteRe
 		if err != nil {
 			return nil, errors.New("rpc-AddFavorite-新增点赞数据失败")
 		}
-		if err := l.svcCtx.KqPusherClient.Push("content_rpc_addFavoriteLogic_AddFavorite_Insert_false"); err != nil {
-			log.Fatal(err)
-		}
 	}
 
 	fmt.Println("【rpc-AddFavorite-新增点赞数据成功】")
-	logx.Error("rpc-AddFavorite-新增点赞数据成功")
-	if err := l.svcCtx.KqPusherClient.Push("content_rpc_addFavoriteLogic_AddFavorite_success"); err != nil {
-		log.Fatal(err)
-	}
-
 	return &pb.AddFavoriteResp{}, nil
 }

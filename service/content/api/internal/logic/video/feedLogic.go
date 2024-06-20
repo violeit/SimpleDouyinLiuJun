@@ -4,14 +4,10 @@ import (
 	"context"
 	"doushen_by_liujun/internal/common"
 	"doushen_by_liujun/internal/util"
-	"doushen_by_liujun/service/content/rpc/pb"
-	userPb "doushen_by_liujun/service/user/rpc/pb"
-	"fmt"
-	"time"
-
 	"doushen_by_liujun/service/content/api/internal/svc"
 	"doushen_by_liujun/service/content/api/internal/types"
-
+	"doushen_by_liujun/service/content/rpc/pb"
+	userPb "doushen_by_liujun/service/user/rpc/pb"
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
@@ -30,15 +26,13 @@ func NewFeedLogic(ctx context.Context, svcCtx *svc.ServiceContext) *FeedLogic {
 }
 
 func (l *FeedLogic) Feed(req *types.FeedReq) (resp *types.FeedResp, err error) {
-	// todo: add your logic here and delete this line
-	fmt.Println("进入feed流api逻辑")
-	fmt.Println(req.LatestTime)
-	fmt.Println(time.Now().Unix())
-	fmt.Println("=================================================")
-	fmt.Println(req.Token)
+
+	l.Logger.Info("Feed方法请求参数：", req)
+
 	var userId int64
 	token, err := util.ParseToken(req.Token)
 	if err != nil {
+		l.Logger.Error(err)
 		// 用户未登录
 		userId = 0
 	} else {
@@ -46,31 +40,37 @@ func (l *FeedLogic) Feed(req *types.FeedReq) (resp *types.FeedResp, err error) {
 	}
 	var lastTime int64
 	if req.LatestTime > 169268692200 {
-		lastTime = req.LatestTime / 1000
+		// 获取第三位数字
+		thirdDigit := (req.LatestTime / 100) % 10
+
+		// 进行四舍五入
+		if thirdDigit >= 5 {
+			lastTime = req.LatestTime/1000 + 1
+		} else {
+			lastTime = req.LatestTime / 1000
+		}
 	} else {
 		lastTime = req.LatestTime
 	}
-	fmt.Println("我要去rpc了")
 	data, err := l.svcCtx.ContentRpcClient.GetFeedList(l.ctx, &pb.FeedListReq{
 		UserId:     userId,
 		LatestTime: lastTime,
 		Size:       5,
 	})
-	fmt.Println("我回到api了，我来看看list是什么")
-	fmt.Println(data)
-
 	if err != nil {
-		fmt.Println("陶子勋陶子勋陶子勋，listerr", err)
+		l.Logger.Error(err)
 		return &types.FeedResp{
-			StatusCode: common.DB_ERROR,
-			StatusMsg:  common.MapErrMsg(common.DB_ERROR),
+			StatusCode: common.DbError,
+			StatusMsg:  common.MapErrMsg(common.DbError),
 		}, nil
 	}
 	if data == nil {
-		fmt.Println("陶子勋陶子勋陶子勋，listnil")
+
+		l.Logger.Error(err)
+
 		return &types.FeedResp{
-			StatusCode: common.DATA_USE_UP,
-			StatusMsg:  common.MapErrMsg(common.DATA_USE_UP),
+			StatusCode: common.DataUseUp,
+			StatusMsg:  common.MapErrMsg(common.DataUseUp),
 		}, nil
 	}
 
@@ -90,19 +90,21 @@ func (l *FeedLogic) Feed(req *types.FeedReq) (resp *types.FeedResp, err error) {
 			LatestTime: int64(9999999999),
 			Size:       int64(5 - listLen),
 		})
-		//陶子勋收到的数据！！！！！！ 877806281992183808 1111111111 1
+		//陶子勋收到的数据！！！！！！
 		if err != nil {
-			fmt.Println("陶子勋陶子勋陶子勋，list2err", err)
+			l.Logger.Error(err)
 			return &types.FeedResp{
-				StatusCode: common.DB_ERROR,
-				StatusMsg:  common.MapErrMsg(common.DB_ERROR),
+				StatusCode: common.DbError,
+				StatusMsg:  common.MapErrMsg(common.DbError),
 			}, nil
 		}
 		if data2 == nil {
-			fmt.Println("陶子勋陶子勋陶子勋，list2nil")
+
+			l.Logger.Error(err)
+
 			return &types.FeedResp{
-				StatusCode: common.DATA_USE_UP,
-				StatusMsg:  common.MapErrMsg(common.DATA_USE_UP),
+				StatusCode: common.DataUseUp,
+				StatusMsg:  common.MapErrMsg(common.DataUseUp),
 			}, nil
 		}
 		if listLen == 0 {
@@ -119,9 +121,10 @@ func (l *FeedLogic) Feed(req *types.FeedReq) (resp *types.FeedResp, err error) {
 		UserID: userId,
 	})
 	if err != nil {
+		l.Logger.Error(err)
 		return &types.FeedResp{
-			StatusCode: common.DB_ERROR,
-			StatusMsg:  common.MapErrMsg(common.DB_ERROR),
+			StatusCode: common.DbError,
+			StatusMsg:  common.MapErrMsg(common.DbError),
 		}, nil
 	}
 
@@ -142,10 +145,7 @@ func (l *FeedLogic) Feed(req *types.FeedReq) (resp *types.FeedResp, err error) {
 		})
 	}
 
-	fmt.Println("陶子勋陶子勋陶子勋，视频流长度", len(videoList))
-	fmt.Println("完成feed流rpc逻辑")
 	var FeedVideos []types.Video
-	fmt.Println("到这了222222")
 	var nextTime int64
 
 	for count, video := range videoList {
@@ -175,7 +175,6 @@ func (l *FeedLogic) Feed(req *types.FeedReq) (resp *types.FeedResp, err error) {
 		})
 		nextTime = video.NextTime
 	}
-	//fmt.Println("完成对象转换逻辑")
 
 	return &types.FeedResp{
 		StatusCode: common.OK,

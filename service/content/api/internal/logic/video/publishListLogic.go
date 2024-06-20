@@ -4,12 +4,10 @@ import (
 	"context"
 	"doushen_by_liujun/internal/common"
 	"doushen_by_liujun/internal/util"
-	"doushen_by_liujun/service/content/rpc/pb"
-	userPb "doushen_by_liujun/service/user/rpc/pb"
-	"fmt"
-
 	"doushen_by_liujun/service/content/api/internal/svc"
 	"doushen_by_liujun/service/content/api/internal/types"
+	"doushen_by_liujun/service/content/rpc/pb"
+	userPb "doushen_by_liujun/service/user/rpc/pb"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -29,13 +27,16 @@ func NewPublishListLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Publi
 }
 
 func (l *PublishListLogic) PublishList(req *types.PublishListReq) (resp *types.PublishListResp, err error) {
-	// todo: add your logic here and delete this line
-	fmt.Println("进入publisher api逻辑")
+	l.Logger.Info("PublishList方法请求参数：", req)
 	var userId int64
 	token, err := util.ParseToken(req.Token)
 	if err != nil {
-		// 用户未登录
-		userId = 0
+		// 用户未登录（此处避免抖声app在退出登录时乱发请求所做限流）
+		return &types.PublishListResp{
+			StatusCode: common.OK,
+			StatusMsg:  common.MapErrMsg(common.OK),
+			VideoList:  nil,
+		}, nil
 	} else {
 		userId = token.UserID
 	}
@@ -44,12 +45,14 @@ func (l *PublishListLogic) PublishList(req *types.PublishListReq) (resp *types.P
 		UserId:      userId,
 	})
 	if err != nil {
+		l.Logger.Error(err)
 		return &types.PublishListResp{
-			StatusCode: common.DB_ERROR,
-			StatusMsg:  common.MapErrMsg(common.DB_ERROR),
+			StatusCode: common.DbError,
+			StatusMsg:  common.MapErrMsg(common.DbError),
 		}, nil
 	}
 	if data == nil {
+		l.Logger.Error(err)
 		return &types.PublishListResp{
 			StatusCode: common.OK,
 			StatusMsg:  common.MapErrMsg(common.OK),
@@ -62,9 +65,10 @@ func (l *PublishListLogic) PublishList(req *types.PublishListReq) (resp *types.P
 		UserID: userId,
 	})
 	if err != nil {
+		l.Logger.Error(err)
 		return &types.PublishListResp{
-			StatusCode: common.DB_ERROR,
-			StatusMsg:  common.MapErrMsg(common.DB_ERROR),
+			StatusCode: common.DbError,
+			StatusMsg:  common.MapErrMsg(common.DbError),
 		}, nil
 	}
 	var feedUserList []*pb.FeedUser
@@ -86,15 +90,10 @@ func (l *PublishListLogic) PublishList(req *types.PublishListReq) (resp *types.P
 
 	videoList := data.VideoList
 
-	fmt.Println("完成publisher 流rpc逻辑")
 	var FeedVideos []types.Video
 
 	for index, video := range videoList {
-		fmt.Println("到这了44444")
 		user := feedUserList[index]
-		//在这打印一下author吧，
-		fmt.Println("到这了11111111111")
-		fmt.Println(user)
 		var author = &types.User{
 			Id:              user.Id,
 			Name:            user.Name,
@@ -119,8 +118,6 @@ func (l *PublishListLogic) PublishList(req *types.PublishListReq) (resp *types.P
 			Title:         video.Title,
 		})
 	}
-	fmt.Println("完成对象转换逻辑")
-
 	return &types.PublishListResp{
 		StatusCode: common.OK,
 		StatusMsg:  common.MapErrMsg(common.OK),

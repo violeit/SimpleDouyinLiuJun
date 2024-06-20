@@ -2,12 +2,14 @@ Name: user.rpc
 ListenOn: 0.0.0.0:8082
 
 
+DevServer:
+  Enabled: true
+  Port: 8072
+
 Etcd:
   Hosts:
     - 0.0.0.0:8090
   Key: userRpc
-#  Pass: liujun
-#  User: root
 
 DB:
   DataSource: root:liujun@tcp(8.137.50.160:3306)/liujun_user?charset=utf8mb4&parseTime=true&loc=Asia%2FShanghai
@@ -16,25 +18,61 @@ Cache:
   - Host: 127.0.0.1:8094
     Pass: liujun
 
-
 Mode: dev
-
-UserKqPusherConf:
-  Brokers:
-    - 127.0.0.1:9092
-    - 127.0.0.1:9093
-    - 127.0.0.1:9094
-    - 127.0.0.1:9095
-  Topic: user
 
 RedisConf:
   Host: 127.0.0.1:8094
   Pass: "liujun"
+
+Log:
+  ServiceName: user.rpc
+  Mode: file
+  Path: logs/ordinary-log/user/rpc
+  Level: info
+  Encoding: plain
+  KeepDays: 7
+
+DefaultAvatar:
+  - http://8.137.50.160:9000/avatar/202308271001.jpeg
+  - http://8.137.50.160:9000/avatar/202308271002.jpeg
+  - http://8.137.50.160:9000/avatar/202308271003.jpeg
+  - http://8.137.50.160:9000/avatar/202308271004.jpeg
+  - http://8.137.50.160:9000/avatar/202308271005.jpeg
+  - http://8.137.50.160:9000/avatar/202308271006.jpeg
+  - http://8.137.50.160:9000/avatar/202308271007.jpeg
+  - http://8.137.50.160:9000/avatar/202308271008.jpeg
+  - http://8.137.50.160:9000/avatar/202308271009.jpeg
+  - http://8.137.50.160:9000/avatar/202308271010.jpeg
+  - http://8.137.50.160:9000/avatar/202308271011.jpeg
+  - http://8.137.50.160:9000/avatar/202308271011.jpeg
+  - http://8.137.50.160:9000/avatar/202308271012.jpeg
+  - http://8.137.50.160:9000/avatar/202308271013.jpeg
+  - http://8.137.50.160:9000/avatar/202308271014.jpeg
+  - http://8.137.50.160:9000/avatar/202308271015.jpeg
+
+DefaultBackgroundImg:
+  - http://8.137.50.160:9000/backgroundimg/202308271001.jpeg
+  - http://8.137.50.160:9000/backgroundimg/202308271002.jpeg
+  - http://8.137.50.160:9000/backgroundimg/202308271003.jpeg
+  - http://8.137.50.160:9000/backgroundimg/202308271004.jpeg
+  - http://8.137.50.160:9000/backgroundimg/202308271005.jpeg
+  - http://8.137.50.160:9000/backgroundimg/202308271006.jpeg
+  - http://8.137.50.160:9000/backgroundimg/202308271007.jpeg
+  - http://8.137.50.160:9000/backgroundimg/202308271008.jpeg
+  - http://8.137.50.160:9000/backgroundimg/202308271009.jpeg
+  - http://8.137.50.160:9000/backgroundimg/202308271010.jpeg
+  - http://8.137.50.160:9000/backgroundimg/202308271011.jpeg
+  - http://8.137.50.160:9000/backgroundimg/202308271011.jpeg
+  - http://8.137.50.160:9000/backgroundimg/202308271012.jpeg
+  - http://8.137.50.160:9000/backgroundimg/202308271013.jpeg
+  - http://8.137.50.160:9000/backgroundimg/202308271014.jpeg
+  - http://8.137.50.160:9000/backgroundimg/202308271015.jpeg
+
+
+
 
 ContentRpcConf:
   Etcd:
     Hosts:
       - 127.0.0.1:8090
     Key: contentRpc
-#    Pass: liujun
-#    User: root

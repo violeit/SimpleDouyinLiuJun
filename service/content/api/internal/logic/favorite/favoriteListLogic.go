@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"doushen_by_liujun/internal/common"
 	"doushen_by_liujun/internal/util"
+	"errors"
 
 	constants "doushen_by_liujun/internal/common"
 
@@ -35,28 +36,30 @@ func (l *FavoriteListLogic) FavoriteList(req *types.FavoriteListReq) (resp *type
 	/*
 		Author：    刘洋
 		Function：  在用户界面返回点赞列表：视频1 [作者（用户信息）、视频信息]、视频2[...]、...
-		Update：    08.23
+		Update：    08.29 修改点击别人视频作者出现当前用户喜欢列表bug。将使用 token 中 userId 查询改为通过方法传入的 userId 查询
 	*/
+	l.Logger.Info(req)
 	redisClient := l.svcCtx.RedisClient
 
 	// 1.根据 token 获取 userid
-	parsToken, err0 := util.ParseToken(req.Token)
+	_, err0 := util.ParseToken(req.Token)
 	if err0 != nil {
-		// 返回token失效错误
+		l.Logger.Error(err0)
 		return &types.FavoriteListResp{
-			StatusCode: common.TOKEN_EXPIRE_ERROR,
-			StatusMsg:  common.MapErrMsg(common.TOKEN_EXPIRE_ERROR),
+			StatusCode: common.TokenExpireError,
+			StatusMsg:  common.MapErrMsg(common.TokenExpireError),
 		}, nil
 	}
 
 	// 2.根据 user_id 查询 favorite 表，返回点赞的所有 video_id
 	favoriteListResp, err1 := l.svcCtx.ContentRpcClient.SearchFavorite(l.ctx, &pb.SearchFavoriteReq{
-		UserId: parsToken.UserID,
+		UserId: req.UserId,
 	})
-	if err1 != nil && err1 != sql.ErrNoRows {
+	if err1 != nil && !errors.Is(err1, sql.ErrNoRows) {
+		l.Logger.Error(err1)
 		return &types.FavoriteListResp{
-			StatusCode: common.DB_ERROR,
-			StatusMsg:  common.MapErrMsg(common.DB_ERROR),
+			StatusCode: common.DbError,
+			StatusMsg:  common.MapErrMsg(common.DbError),
 		}, nil
 	}
 	fmt.Println("查到favoriteList")
@@ -77,10 +80,11 @@ func (l *FavoriteListLogic) FavoriteList(req *types.FavoriteListReq) (resp *type
 	videoListResp, err2 := l.svcCtx.ContentRpcClient.GetVideoListByIdList(l.ctx, &pb.GetVideoListByIdListReq{
 		VideoIdList: videoIdList,
 	})
-	if err2 != nil && err2 != sql.ErrNoRows {
+	if err2 != nil && !errors.Is(err2, sql.ErrNoRows) {
+		l.Logger.Error(err2)
 		return &types.FavoriteListResp{
-			StatusCode: common.DB_ERROR,
-			StatusMsg:  common.MapErrMsg(common.DB_ERROR),
+			StatusCode: common.DbError,
+			StatusMsg:  common.MapErrMsg(common.DbError),
 		}, nil
 	}
 	fmt.Println("查到videoList")
@@ -152,9 +156,10 @@ func (l *FavoriteListLogic) FavoriteList(req *types.FavoriteListReq) (resp *type
 		// 4.2.1 从 redis 获取当前 video 的点赞数
 		videoLikedCntRecord, err3 := redisClient.GetCtx(l.ctx, videoLikedCntKey)
 		if err3 != nil && err3 != redis.Nil {
+			l.Logger.Error(err3)
 			return &types.FavoriteListResp{
-				StatusCode: common.REDIS_ERROR,
-				StatusMsg:  common.MapErrMsg(common.REDIS_ERROR),
+				StatusCode: common.RedisError,
+				StatusMsg:  common.MapErrMsg(common.RedisError),
 			}, nil
 		}
 		var videoLikedCnt int64 = 0
@@ -164,9 +169,10 @@ func (l *FavoriteListLogic) FavoriteList(req *types.FavoriteListReq) (resp *type
 		// 4.2.2 从 redis 获取当前 video 的评论数
 		videoCommentedCntRecord, err6 := redisClient.GetCtx(l.ctx, videoCommentedCntKey)
 		if err6 != nil && err6 != redis.Nil {
+			l.Logger.Error(err6)
 			return &types.FavoriteListResp{
-				StatusCode: common.REDIS_ERROR,
-				StatusMsg:  common.MapErrMsg(common.REDIS_ERROR),
+				StatusCode: common.RedisError,
+				StatusMsg:  common.MapErrMsg(common.RedisError),
 			}, nil
 		}
 		var videoCommentedCnt int64 = 0

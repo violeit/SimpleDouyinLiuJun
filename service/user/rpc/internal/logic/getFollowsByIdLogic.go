@@ -5,11 +5,9 @@ import (
 	"doushen_by_liujun/internal/common"
 	"doushen_by_liujun/service/user/rpc/internal/svc"
 	"doushen_by_liujun/service/user/rpc/pb"
-	"fmt"
 	"github.com/zeromicro/go-zero/core/logx"
 	"math/rand"
 	"strconv"
-	"time"
 )
 
 type GetFollowsByIdLogic struct {
@@ -27,7 +25,7 @@ func NewGetFollowsByIdLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Ge
 }
 
 func (l *GetFollowsByIdLogic) GetFollowsById(in *pb.GetFollowsByIdReq) (*pb.GetFollowsByIdResp, error) {
-	// todo: add your logic here and delete this line
+	l.Logger.Info(in)
 	follows, err := l.svcCtx.FollowsModel.FindByUserId(l.ctx, in.Id)
 	if err != nil {
 		return nil, err
@@ -40,7 +38,7 @@ func (l *GetFollowsByIdLogic) GetFollowsById(in *pb.GetFollowsByIdReq) (*pb.GetF
 		followRecord, _ := redisClient.GetCtx(l.ctx, followKey)
 		followNum := 0
 		followerNum := 0
-		rand.Seed(time.Now().UnixNano())
+		//rand.Seed(time.Now().UnixNano())
 		expiration := 3000 + rand.Intn(600)
 		if len(followRecord) == 0 {
 			//没有记录，去查表
@@ -69,7 +67,6 @@ func (l *GetFollowsByIdLogic) GetFollowsById(in *pb.GetFollowsByIdReq) (*pb.GetF
 			//有记录
 			followerNum, _ = strconv.Atoi(followerRecord)
 		}
-		fmt.Println(item)
 		resp = append(resp, &pb.Follows{
 			Id:              item.Id,
 			FollowerCount:   int64(followerNum),

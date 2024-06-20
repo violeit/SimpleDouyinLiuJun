@@ -10,7 +10,6 @@ import (
 	"doushen_by_liujun/service/media/rpc/pb"
 	"doushen_by_liujun/service/media/rpc/util"
 	"encoding/json"
-	"fmt"
 	"github.com/google/uuid"
 	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/core/threading"
@@ -34,12 +33,27 @@ func NewUploadLogic(ctx context.Context, svcCtx *svc.ServiceContext) *UploadLogi
 
 func (l *UploadLogic) Upload(req *types.UploadReq) (resp *types.UploadResp, err error) {
 
-	fmt.Println("进入上传api逻辑")
 	token, err := gloabalUtil.ParseToken(req.Token)
 	if err != nil {
 		return &types.UploadResp{
-			StatusMsg:  common.MapErrMsg(common.TOKEN_PARSE_ERROR),
-			StatusCode: common.TOKEN_PARSE_ERROR,
+			StatusMsg:  common.MapErrMsg(common.TokenParseError),
+			StatusCode: common.TokenParseError,
+		}, nil
+	}
+	// 给用户上传行为加两秒锁，保持用户上传行为的幂等性
+	isSuccess, err := l.svcCtx.RedisClient.SetnxExCtx(l.ctx, common.UploadLockPrefix+strconv.FormatInt(token.UserID, 10), strconv.FormatInt(token.UserID, 10), 2)
+	if err != nil {
+		l.Logger.Error("redis加锁出问题：", err)
+		return &types.UploadResp{
+			StatusMsg:  common.MapErrMsg(common.RedisError),
+			StatusCode: common.RedisError,
+		}, nil
+	}
+	if !isSuccess {
+		l.Logger.Error("禁止两秒内多次上传上传行为")
+		return &types.UploadResp{
+			StatusMsg:  common.MapErrMsg(common.DbError),
+			StatusCode: common.DbError,
 		}, nil
 	}
 	//生成文件名
@@ -48,34 +62,28 @@ func (l *UploadLogic) Upload(req *types.UploadReq) (resp *types.UploadResp, err 
 	if err != nil {
 		l.Logger.Error("雪花算法出问题：", err)
 		return &types.UploadResp{
-			StatusMsg:  common.MapErrMsg(common.SERVER_COMMON_ERROR),
-			StatusCode: common.SERVER_COMMON_ERROR,
+			StatusMsg:  common.MapErrMsg(common.ServerCommonError),
+			StatusCode: common.ServerCommonError,
 		}, nil
 	}
 	snowId := data.Generate()
 
 	threading.GoSafe(func() {
 		err = util.Upload(l.ctx, req.Data, fileName)
-		fmt.Println("上传成功")
 		if err != nil {
-			//l.Logger.Error("上传出问题：", err)
+			l.Logger.Error("上传出问题：", err)
 		}
 		// 抽取视频第 5 帧
-		//coverData, err := util2.GetFrame(fileName, 5)
 		err = util.GetFrameByDocker(fileName)
 		if err != nil {
-			//l.Logger.Error("抽帧封面出问题：", err)
-
+			l.Logger.Error("抽帧封面出问题：", err)
 		}
 		// 上传封面
-		//util2.PutPicture(coverData, fileName)
-		fmt.Println("上传封面")
 		util.PutPictureByDocker(fileName)
 		if err != nil {
-			//l.Logger.Error("上传封面出问题：", err)
+			l.Logger.Error("上传封面出问题：", err)
 
 		}
-		fmt.Println("上传封面")
 	})
 
 	//kafka 推送
@@ -83,7 +91,6 @@ func (l *UploadLogic) Upload(req *types.UploadReq) (resp *types.UploadResp, err 
 	ipString, ok := ip.(string)
 	message := gloabalType.UploadSuccessMessage{}
 	if ok {
-		fmt.Println("sdasdasdad")
 		message.IP = ipString
 		message.Uploadtime = time.Now()
 		message.UserId = token.UserID
@@ -109,23 +116,23 @@ func (l *UploadLogic) Upload(req *types.UploadReq) (resp *types.UploadResp, err 
 	})
 	if err != nil {
 		return &types.UploadResp{
-			StatusMsg:  common.MapErrMsg(common.DB_ERROR),
-			StatusCode: common.DB_ERROR,
+			StatusMsg:  common.MapErrMsg(common.DbError),
+			StatusCode: common.DbError,
 		}, nil
 	}
 
 	_, err = l.svcCtx.RedisClient.Incr(common.CntCacheUserWorkPrefix + strconv.FormatInt(token.UserID, 10))
 	if err != nil {
 		return &types.UploadResp{
-			StatusMsg:  common.MapErrMsg(common.REDIS_ERROR),
-			StatusCode: common.REDIS_ERROR,
+			StatusMsg:  common.MapErrMsg(common.RedisError),
+			StatusCode: common.RedisError,
 		}, nil
 	}
 	err = l.svcCtx.RedisClient.SetCtx(l.ctx, common.VideoCache2User+strconv.FormatInt(token.UserID, 10), strconv.FormatInt(snowId, 10))
 	if err != nil {
 		return &types.UploadResp{
-			StatusMsg:  common.MapErrMsg(common.REDIS_ERROR),
-			StatusCode: common.REDIS_ERROR,
+			StatusMsg:  common.MapErrMsg(common.RedisError),
+			StatusCode: common.RedisError,
 		}, nil
 	}
 	return &types.UploadResp{

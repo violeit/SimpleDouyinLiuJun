@@ -10,7 +10,6 @@ import (
 	"github.com/zeromicro/go-zero/core/logx"
 	"math/rand"
 	"strconv"
-	"time"
 )
 
 type GetUserinfoByIdLogic struct {
@@ -28,9 +27,8 @@ func NewGetUserinfoByIdLogic(ctx context.Context, svcCtx *svc.ServiceContext) *G
 }
 
 func (l *GetUserinfoByIdLogic) GetUserinfoById(in *pb.GetUserinfoByIdReq) (*pb.GetUserinfoByIdResp, error) {
-	// todo: add your logic here and delete this line
+	l.Logger.Info(in)
 	//userId查id这个人
-
 	info, err := l.svcCtx.UserinfoModel.FindOne(l.ctx, in.Id, in.UserID)
 	if err != nil {
 		return nil, err
@@ -40,31 +38,28 @@ func (l *GetUserinfoByIdLogic) GetUserinfoById(in *pb.GetUserinfoByIdReq) (*pb.G
 	followerKey := common.FollowerNum + strconv.Itoa(int(in.Id))
 	followNum := 0
 	followerNum := 0
-	rand.Seed(time.Now().UnixNano())
+	//rand.Seed(time.Now().UnixNano())
 	expiration := 3000 + rand.Intn(600)
 	workCount := 0
 	favoriteCount := 0
 	totalFavorited := 0
 	workCountRecord, _ := redisClient.GetCtx(l.ctx, common.CntCacheUserWorkPrefix+strconv.Itoa(int(in.Id)))
-	fmt.Println("workCount之前")
 	if len(workCountRecord) != 0 { //等于0 代表没有记录，查表并存储到redis
 		//有记录
 		workCount, _ = strconv.Atoi(workCountRecord)
 	} else {
-		fmt.Println("数据库查询workCountRecord")
 		ans, err := l.svcCtx.ContentRpcClient.GetWorkCountByUserId(l.ctx, &contentPB.GetWorkCountByUserIdReq{
 			UserId: in.Id,
 		})
-		fmt.Println("查询结果为")
-		fmt.Println(ans)
-		fmt.Println(err)
 		if err != nil {
 			return nil, err
 		}
 		workCount = int(ans.WorkCount)
-		redisClient.SetCtx(l.ctx, common.CntCacheUserWorkPrefix+strconv.Itoa(int(in.Id)), strconv.Itoa(workCount))
+		err = redisClient.SetCtx(l.ctx, common.CntCacheUserWorkPrefix+strconv.Itoa(int(in.Id)), strconv.Itoa(workCount))
+		if err != nil {
+			fmt.Printf("redis set err %v\n", err)
+		}
 	}
-	fmt.Println("workCount之后")
 	favoriteCountRecord, _ := redisClient.GetCtx(l.ctx, common.CntCacheUserLikePrefix+strconv.Itoa(int(in.Id)))
 	if len(favoriteCountRecord) != 0 { //等于0 代表没有记录，查表并存储到redis
 		//有记录
@@ -77,9 +72,11 @@ func (l *GetUserinfoByIdLogic) GetUserinfoById(in *pb.GetUserinfoByIdReq) (*pb.G
 			return nil, err
 		}
 		favoriteCount = int(ans.FavoriteCount)
-		redisClient.SetCtx(l.ctx, common.CntCacheUserLikePrefix+strconv.Itoa(int(in.Id)), strconv.Itoa(favoriteCount))
+		err = redisClient.SetCtx(l.ctx, common.CntCacheUserLikePrefix+strconv.Itoa(int(in.Id)), strconv.Itoa(favoriteCount))
+		if err != nil {
+			fmt.Printf("redis set err %v\n", err)
+		}
 	}
-	fmt.Println("favoriteCount之后")
 	totalFavoritedRecord, _ := redisClient.GetCtx(l.ctx, common.CntCacheUserLikedPrefix+strconv.Itoa(int(in.Id)))
 	if len(totalFavoritedRecord) != 0 { //等于0 代表没有记录，查表并存储到redis
 		//有记录
@@ -92,9 +89,11 @@ func (l *GetUserinfoByIdLogic) GetUserinfoById(in *pb.GetUserinfoByIdReq) (*pb.G
 			return nil, err
 		}
 		totalFavorited = int(ans.LikedCnt)
-		redisClient.SetCtx(l.ctx, common.CntCacheUserLikedPrefix+strconv.Itoa(int(in.Id)), strconv.Itoa(totalFavorited))
+		err = redisClient.SetCtx(l.ctx, common.CntCacheUserLikedPrefix+strconv.Itoa(int(in.Id)), strconv.Itoa(totalFavorited))
+		if err != nil {
+			fmt.Printf("redis set err %v\n", err)
+		}
 	}
-	fmt.Println("totalFavorited之后")
 	followRecord, _ := redisClient.GetCtx(l.ctx, followKey)
 	if len(followRecord) == 0 {
 		//没有记录，去查表

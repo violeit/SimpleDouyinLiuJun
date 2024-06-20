@@ -2,37 +2,30 @@ Name: content
 Host: 0.0.0.0
 Port: 8085
 
+DevServer:
+  Enabled: true
+  Port: 8075
+
 UserRpcConf:
   Etcd:
     Hosts:
       - 127.0.0.1:8090
     Key: userRpc
-#    Pass: liujun
-#    User: root
+
 
 
 Log:
   ServiceName: content
   Mode: file
-  Path: logs/ordinary-log/content
-  Level: error
+  Path: logs/ordinary-log/content/api
+  Level: info
   Encoding: plain
   KeepDays: 7
 
-ContentKqPusherConf:
-  Brokers:
-    - 127.0.0.1:9092
-    - 127.0.0.1:9093
-    - 127.0.0.1:9094
-    - 127.0.0.1:9095
-  Topic: content
 
 UploadPersistentKqPusherConf:
   Brokers:
     - 127.0.0.1:9092
-    - 127.0.0.1:9093
-    - 127.0.0.1:9094
-    - 127.0.0.1:9095
   Topic: uploadPersistent
 
 ContentRpcConf:
@@ -46,3 +39,8 @@ ContentRpcConf:
 RedisConf:
   Host: 0.0.0.0:8094
   Pass: "liujun"
+
+Prometheus:
+  Host: 0.0.0.0
+  Port: 8091
+  Path: /metrics

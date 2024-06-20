@@ -26,16 +26,26 @@ func NewUserinfoLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Userinfo
 }
 
 func (l *UserinfoLogic) Userinfo(req *types.UserinfoReq) (resp *types.UserinfoResp, err error) {
+	//fmt.Println(req)//for test
+	//a := pb.GetUsersByIdsReq{
+	//	UserID: 879260009437863936,
+	//	Ids:    []int64{879651486764638208, 879004869187346432},
+	//}
+	//info, err := l.svcCtx.UserRpcClient.GetUsersByIds(l.ctx, &a)
+	//fmt.Println("在api里", err)
+	//fmt.Println(info)
+	//return nil, nil
+	l.Logger.Info(req)
 	logger, e := util.ParseToken(req.Token)
 	if e != nil {
+		l.Logger.Error(e)
 		return &types.UserinfoResp{
-			StatusCode: common.TOKEN_EXPIRE_ERROR,
-			StatusMsg:  common.MapErrMsg(common.TOKEN_EXPIRE_ERROR),
+			StatusCode: common.TokenExpireError,
+			StatusMsg:  common.MapErrMsg(common.TokenExpireError),
 			User:       types.User{},
 		}, nil
 	}
 	IntUserId, _ := strconv.Atoi(logger.ID)
-	//IntUserId := 203
 
 	info, e := l.svcCtx.UserRpcClient.GetUserinfoById(l.ctx, &pb.GetUserinfoByIdReq{
 		Id:     req.UserId,
@@ -43,9 +53,10 @@ func (l *UserinfoLogic) Userinfo(req *types.UserinfoReq) (resp *types.UserinfoRe
 	})
 	var user types.User
 	if e != nil {
+		l.Logger.Error(e)
 		return &types.UserinfoResp{
-			StatusCode: common.DB_ERROR,
-			StatusMsg:  common.MapErrMsg(common.DB_ERROR),
+			StatusCode: common.DbError,
+			StatusMsg:  common.MapErrMsg(common.DbError),
 			User:       user,
 		}, nil
 	}

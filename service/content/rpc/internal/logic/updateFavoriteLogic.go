@@ -4,7 +4,6 @@ import (
 	"context"
 	"doushen_by_liujun/service/content/rpc/internal/model"
 	"errors"
-	"log"
 	"time"
 
 	"doushen_by_liujun/service/content/rpc/internal/svc"
@@ -28,7 +27,12 @@ func NewUpdateFavoriteLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Up
 }
 
 func (l *UpdateFavoriteLogic) UpdateFavorite(in *pb.UpdateFavoriteReq) (*pb.UpdateFavoriteResp, error) {
-
+	/*
+		Author：    刘洋
+		Function：  向 favorite 表 根据表项id更新 isDelete参数
+		Update：    08.28 对进入逻辑 加log
+	*/
+	l.Logger.Info("UpdateFavorite方法请求参数：", in)
 	//1.根据传入的 isDelete 修改 favorite 表
 	err := l.svcCtx.FavoriteModel.Update(l.ctx, &model.Favorite{
 		Id:         in.Id,
@@ -38,17 +42,11 @@ func (l *UpdateFavoriteLogic) UpdateFavorite(in *pb.UpdateFavoriteReq) (*pb.Upda
 	if err != nil {
 		return nil, errors.New("rpc-updateFavorite-修改点赞信息失败")
 	}
-	if err := l.svcCtx.KqPusherClient.Push("content_rpc_updateFavoriteLogic_UpdateFavorite_Update_false"); err != nil {
-		log.Fatal(err)
-	}
 
 	if in.IsDelete == 0 {
 		logx.Error("rpc-updateFavorite-修改点赞记录为逻辑点赞成功")
 	} else {
 		logx.Error("rpc-updateFavorite-修改点赞记录为逻辑删除成功")
-	}
-	if err := l.svcCtx.KqPusherClient.Push("content_rpc_updateFavoriteLogic_UpdateFavorite_success"); err != nil {
-		log.Fatal(err)
 	}
 	return &pb.UpdateFavoriteResp{}, nil
 }

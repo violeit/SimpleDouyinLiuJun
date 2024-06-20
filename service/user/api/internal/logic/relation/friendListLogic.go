@@ -8,6 +8,7 @@ import (
 	"doushen_by_liujun/service/user/api/internal/svc"
 	"doushen_by_liujun/service/user/api/internal/types"
 	"doushen_by_liujun/service/user/rpc/pb"
+	"fmt"
 	"strconv"
 
 	"github.com/zeromicro/go-zero/core/logx"
@@ -28,11 +29,13 @@ func NewFriendListLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Friend
 }
 
 func (l *FriendListLogic) FriendList(req *types.FriendListReq) (resp *types.FriendListResp, err error) {
+	l.Logger.Info(req)
 	_, e := util.ParseToken(req.Token)
 	if e != nil {
+		l.Logger.Error(e)
 		return &types.FriendListResp{
-			StatusCode: common.TOKEN_EXPIRE_ERROR,
-			StatusMsg:  common.MapErrMsg(common.TOKEN_EXPIRE_ERROR),
+			StatusCode: common.TokenExpireError,
+			StatusMsg:  common.MapErrMsg(common.TokenExpireError),
 			FriendUser: nil,
 		}, nil
 	}
@@ -40,9 +43,10 @@ func (l *FriendListLogic) FriendList(req *types.FriendListReq) (resp *types.Frie
 		Id: req.UserId,
 	})
 	if err != nil {
+		l.Logger.Error(err)
 		return &types.FriendListResp{
-			StatusCode: common.DB_ERROR,
-			StatusMsg:  common.MapErrMsg(common.DB_ERROR),
+			StatusCode: common.DbError,
+			StatusMsg:  common.MapErrMsg(common.DbError),
 			FriendUser: nil,
 		}, nil
 	}
@@ -61,10 +65,18 @@ func (l *FriendListLogic) FriendList(req *types.FriendListReq) (resp *types.Frie
 				UserId: item.Id,
 			})
 			if err != nil {
-				return nil, err
+				l.Logger.Error(err)
+				return &types.FriendListResp{
+					StatusCode: common.DbError,
+					StatusMsg:  common.MapErrMsg(common.DbError),
+					FriendUser: nil,
+				}, nil
 			}
 			workCount = int(ans.WorkCount)
-			redisClient.SetCtx(l.ctx, common.CntCacheUserWorkPrefix+strconv.Itoa(int(item.Id)), strconv.Itoa(workCount))
+			err = redisClient.SetCtx(l.ctx, common.CntCacheUserWorkPrefix+strconv.Itoa(int(item.Id)), strconv.Itoa(workCount))
+			if err != nil {
+				fmt.Printf("redis set err %v\n", err)
+			}
 		}
 		favoriteCountRecord, _ := redisClient.GetCtx(l.ctx, common.CntCacheUserLikePrefix+strconv.Itoa(int(item.Id)))
 		if len(favoriteCountRecord) != 0 { //等于0 代表没有记录，查表并存储到redis
@@ -75,10 +87,18 @@ func (l *FriendListLogic) FriendList(req *types.FriendListReq) (resp *types.Frie
 				UserId: item.Id,
 			})
 			if err != nil {
-				return nil, err
+				l.Logger.Error(err)
+				return &types.FriendListResp{
+					StatusCode: common.DbError,
+					StatusMsg:  common.MapErrMsg(common.DbError),
+					FriendUser: nil,
+				}, nil
 			}
 			favoriteCount = int(ans.FavoriteCount)
-			redisClient.SetCtx(l.ctx, common.CntCacheUserLikePrefix+strconv.Itoa(int(item.Id)), strconv.Itoa(favoriteCount))
+			err = redisClient.SetCtx(l.ctx, common.CntCacheUserLikePrefix+strconv.Itoa(int(item.Id)), strconv.Itoa(favoriteCount))
+			if err != nil {
+				fmt.Printf("redis set err%v\n", err)
+			}
 		}
 		totalFavoritedRecord, _ := redisClient.GetCtx(l.ctx, common.CntCacheUserLikedPrefix+strconv.Itoa(int(item.Id)))
 		if len(totalFavoritedRecord) != 0 { //等于0 代表没有记录，查表并存储到redis
@@ -89,10 +109,18 @@ func (l *FriendListLogic) FriendList(req *types.FriendListReq) (resp *types.Frie
 				UserId: item.Id,
 			})
 			if err != nil {
-				return nil, err
+				l.Logger.Error(err)
+				return &types.FriendListResp{
+					StatusCode: common.DbError,
+					StatusMsg:  common.MapErrMsg(common.DbError),
+					FriendUser: nil,
+				}, nil
 			}
 			totalFavorited = int(ans.LikedCnt)
-			redisClient.SetCtx(l.ctx, common.CntCacheUserLikedPrefix+strconv.Itoa(int(item.Id)), strconv.Itoa(totalFavorited))
+			err = redisClient.SetCtx(l.ctx, common.CntCacheUserLikedPrefix+strconv.Itoa(int(item.Id)), strconv.Itoa(totalFavorited))
+			if err != nil {
+				fmt.Printf("redis set err %v\n", err)
+			}
 		}
 		user := types.FriendUser{
 			UserId:          item.Id,

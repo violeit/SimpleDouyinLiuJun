@@ -19,14 +19,10 @@ type (
 	GetChatMessageByIdReq  = pb.GetChatMessageByIdReq
 	GetChatMessageByIdResp = pb.GetChatMessageByIdResp
 	Message                = pb.Message
-	SearchChatMessageReq   = pb.SearchChatMessageReq
-	SearchChatMessageResp  = pb.SearchChatMessageResp
 
 	Chat interface {
-		// -----------------------鑱婂ぉ淇℃伅-----------------------
 		AddChatMessage(ctx context.Context, in *AddChatMessageReq, opts ...grpc.CallOption) (*AddChatMessageResp, error)
 		GetChatMessageById(ctx context.Context, in *GetChatMessageByIdReq, opts ...grpc.CallOption) (*GetChatMessageByIdResp, error)
-		SearchChatMessage(ctx context.Context, in *SearchChatMessageReq, opts ...grpc.CallOption) (*SearchChatMessageResp, error)
 	}
 
 	defaultChat struct {
@@ -40,7 +36,6 @@ func NewChat(cli zrpc.Client) Chat {
 	}
 }
 
-// -----------------------鑱婂ぉ淇℃伅-----------------------
 func (m *defaultChat) AddChatMessage(ctx context.Context, in *AddChatMessageReq, opts ...grpc.CallOption) (*AddChatMessageResp, error) {
 	client := pb.NewChatClient(m.cli.Conn())
 	return client.AddChatMessage(ctx, in, opts...)
@@ -49,9 +44,4 @@ func (m *defaultChat) AddChatMessage(ctx context.Context, in *AddChatMessageReq,
 func (m *defaultChat) GetChatMessageById(ctx context.Context, in *GetChatMessageByIdReq, opts ...grpc.CallOption) (*GetChatMessageByIdResp, error) {
 	client := pb.NewChatClient(m.cli.Conn())
 	return client.GetChatMessageById(ctx, in, opts...)
-}
-
-func (m *defaultChat) SearchChatMessage(ctx context.Context, in *SearchChatMessageReq, opts ...grpc.CallOption) (*SearchChatMessageResp, error) {
-	client := pb.NewChatClient(m.cli.Conn())
-	return client.SearchChatMessage(ctx, in, opts...)
 }

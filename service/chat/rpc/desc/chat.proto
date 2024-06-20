@@ -8,7 +8,6 @@ package pb;
 // Messages
 // ------------------------------------ 
 
-//--------------------------------鑱婂ぉ淇℃伅--------------------------------
 message ChatMessage {
   int64 id = 1;
   int64 userId = 2;
@@ -28,10 +27,6 @@ message AddChatMessageReq {
 message AddChatMessageResp {
 }
 
-
-
-
-
 message GetChatMessageByIdReq {
   int64 userId = 1; //id
   int64 toUserId = 2 ;
@@ -50,21 +45,6 @@ message GetChatMessageByIdResp {
   repeated Message messageList = 1;
 }
 
-message SearchChatMessageReq {
-  int64 page = 1;
-  int64 limit = 2;
-  int64 id = 3;
-  int64 userId = 4;
-  int64 toUserId = 5;
-  string message = 6;
-  int64 createTime = 7;
-  int64 updateTime = 8;
-}
-
-message SearchChatMessageResp {
-  repeated ChatMessage chatMessage = 1; //chatMessage
-}
-
 
 
 // ------------------------------------ 
@@ -73,9 +53,7 @@ message SearchChatMessageResp {
 
 service chat{
 
-  //-----------------------鑱婂ぉ淇℃伅-----------------------
   rpc AddChatMessage(AddChatMessageReq) returns (AddChatMessageResp);
   rpc GetChatMessageById(GetChatMessageByIdReq) returns (GetChatMessageByIdResp);
-  rpc SearchChatMessage(SearchChatMessageReq) returns (SearchChatMessageResp);
 
 }

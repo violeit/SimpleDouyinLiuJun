@@ -2,15 +2,12 @@ package logic
 
 import (
 	"context"
+	"doushen_by_liujun/internal/common"
 	"doushen_by_liujun/internal/util"
 	"doushen_by_liujun/service/chat/rpc/internal/model"
-	"fmt"
-	"log"
-	"math/rand"
-	"time"
-
 	"doushen_by_liujun/service/chat/rpc/internal/svc"
 	"doushen_by_liujun/service/chat/rpc/pb"
+	"fmt"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -30,13 +27,12 @@ func NewAddChatMessageLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Ad
 }
 
 func (l *AddChatMessageLogic) AddChatMessage(in *pb.AddChatMessageReq) (*pb.AddChatMessageResp, error) {
+	l.Logger.Info("AddChatMessage方法请求参数：", in)
+
 	// generate id
-	rand.Seed(time.Now().UnixNano())
-	snowflake, err := util.NewSnowflake(int64(rand.Intn(1023)))
+	snowflake, err := util.NewSnowflake(common.ChatRpcMachineId)
 	if err != nil {
-		if err = l.svcCtx.KqPusherClient.Push("chat_rpc_addChatMessageLogic_AddChatMessage_NewSnowflake_false"); err != nil {
-			log.Fatal(err)
-		}
+
 		return nil, fmt.Errorf("fail to generate id, error = %s", err)
 	}
 
@@ -52,14 +48,9 @@ func (l *AddChatMessageLogic) AddChatMessage(in *pb.AddChatMessageReq) (*pb.AddC
 	}
 	_, err = l.svcCtx.ChatMessageModel.Insert(l.ctx, request)
 	if err != nil {
-		if err = l.svcCtx.KqPusherClient.Push("chat_rpc_addChatMessageLogic_AddChatMessage_Insert_false"); err != nil {
-			log.Fatal(err)
-		}
+
 		return nil, fmt.Errorf("fail to add chat message record, error = %s", err)
 	}
 
-	if err = l.svcCtx.KqPusherClient.Push("chat_rpc_addChatMessageLogic_AddChatMessage_success"); err != nil {
-		log.Fatal(err)
-	}
 	return &pb.AddChatMessageResp{}, nil
 }

@@ -2,6 +2,10 @@ Name: media.rpc
 ListenOn: 0.0.0.0:8084
 
 
+DevServer:
+  Enabled: true
+  Port: 8074
+
 Etcd:
   Hosts:
   - 0.0.0.0:8090
@@ -11,13 +15,14 @@ Etcd:
 DB:
   DataSource: root:liujun@tcp(8.137.50.160:3306)/liujun_content?charset=utf8mb4&parseTime=true&loc=Asia%2FShanghai
 
-MediaKqPusherConf:
-  Brokers:
-    - 127.0.0.1:9092
-    - 127.0.0.1:9093
-    - 127.0.0.1:9094
-    - 127.0.0.1:9095
-  Topic: media
+
+Log:
+  ServiceName: media.rpc
+  Mode: file
+  Path: logs/ordinary-log/media/rpc
+  Level: info
+  Encoding: plain
+  KeepDays: 7
 
 Cache:
   - Host: 0.0.0.0:8094

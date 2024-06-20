@@ -2,13 +2,11 @@ package logic
 
 import (
 	"context"
+	"doushen_by_liujun/internal/common"
 	"doushen_by_liujun/internal/util"
 	"doushen_by_liujun/service/chat/api/internal/svc"
 	"doushen_by_liujun/service/chat/api/internal/types"
 	"doushen_by_liujun/service/chat/rpc/pb"
-	"fmt"
-	"log"
-
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
@@ -27,19 +25,37 @@ func NewMessageListLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Messa
 }
 
 func (l *MessageListLogic) MessageList(req *types.MessageChatReq) (*types.MessageChatReqResp, error) {
-	var resp *types.MessageChatReqResp
+	l.Logger.Info("MessageList方法请求参数：", req)
+
+	var lastTime int64
+	var flag bool //标识需不需要删除第一条数据
+
+	if req.PreMsgTime > 169268692200 {
+
+		flag = true
+		// 获取第三位数字
+		//thirdDigit := (req.PreMsgTime / 100) % 10
+		lastTime = req.PreMsgTime / 1000
+		// 进行四舍五入
+		//if thirdDigit >= 5 {
+		//	lastTime = req.PreMsgTime/1000 + 1
+		//} else {
+		//	lastTime = req.PreMsgTime / 1000
+		//}
+	} else {
+		flag = false
+		lastTime = req.PreMsgTime
+	}
+
 	// parse token
 	res, err := util.ParseToken(req.Token)
 	if err != nil {
-		if err = l.svcCtx.KqPusherClient.Push("chat_api_messageListLogic_MessageList_ParseToken_false"); err != nil {
-			log.Fatal(err)
-		}
-		resp = &types.MessageChatReqResp{
-			StatusCode:  1,
-			StatusMsg:   "fail to parse token",
+		l.Logger.Error(err)
+		return &types.MessageChatReqResp{
+			StatusCode:  common.TokenExpireError,
+			StatusMsg:   common.MapErrMsg(common.TokenExpireError),
 			MessageList: nil,
-		}
-		return resp, fmt.Errorf("fail to parse token, error = %s", err)
+		}, nil
 	}
 
 	// get params
@@ -49,20 +65,17 @@ func (l *MessageListLogic) MessageList(req *types.MessageChatReq) (*types.Messag
 	request := pb.GetChatMessageByIdReq{
 		UserId:     userId,
 		ToUserId:   toUserId,
-		PreMsgTime: req.PreMsgTime,
+		PreMsgTime: lastTime,
 	}
 	// get chat messages
 	message, err := l.svcCtx.ChatRpcClient.GetChatMessageById(l.ctx, &request)
 	if err != nil {
-		if err = l.svcCtx.KqPusherClient.Push("chat_api_messageListLogic_MessageList_GetChatMessageById_false"); err != nil {
-			log.Fatal(err)
-		}
-		resp = &types.MessageChatReqResp{
-			StatusCode:  1,
-			StatusMsg:   "fail to get chat message",
+		l.Logger.Error(err)
+		return &types.MessageChatReqResp{
+			StatusCode:  common.DbError,
+			StatusMsg:   common.MapErrMsg(common.DbError),
 			MessageList: nil,
-		}
-		return resp, fmt.Errorf("fail to get chat message, error = %s", err)
+		}, nil
 	}
 
 	var messages []types.Message
@@ -72,18 +85,21 @@ func (l *MessageListLogic) MessageList(req *types.MessageChatReq) (*types.Messag
 			ToUserId:   item.ToUserId,
 			FromUserId: item.FromUserId,
 			Content:    item.Content,
-			CreateTime: item.CreateTime,
+			CreateTime: *item.CreateTime,
 		}
 		messages = append(messages, msg)
 	}
-
-	resp = &types.MessageChatReqResp{
-		StatusCode:  0,
-		StatusMsg:   "get chat messages successfully",
+	if flag {
+		l.Logger.Info("删除第一条数据")
+		return &types.MessageChatReqResp{
+			StatusCode:  common.OK,
+			StatusMsg:   common.MapErrMsg(common.OK),
+			MessageList: messages[:len(messages)-1],
+		}, nil
+	}
+	return &types.MessageChatReqResp{
+		StatusCode:  common.OK,
+		StatusMsg:   common.MapErrMsg(common.OK),
 		MessageList: messages,
-	}
-	if err = l.svcCtx.KqPusherClient.Push("chat_api_messageListLogic_MessageList_success"); err != nil {
-		log.Fatal(err)
-	}
-	return resp, nil
+	}, nil
 }

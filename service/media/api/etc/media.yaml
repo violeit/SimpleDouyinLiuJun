@@ -5,20 +5,23 @@ MaxBytes: 1048576000
 Timeout: 30000
 
 
+DevServer:
+  Enabled: true
+  Port: 8073
+
 
 MediaRpcConf:
   Etcd:
     Hosts:
       - 127.0.0.1:8090
     Key: mediaRpc
-#    Pass: liujun
-#    User: root
+
 
 Log:
   ServiceName: media
   Mode: file
-  Path: logs/ordinary-log/media
-  Level: error
+  Path: logs/ordinary-log/media/api
+  Level: info
   Encoding: plain
   KeepDays: 7
 

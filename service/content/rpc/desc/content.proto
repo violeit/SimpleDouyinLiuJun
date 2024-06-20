@@ -8,14 +8,14 @@ package pb;
 // Messages
 // ------------------------------------ 
 
-//--------------------------------璇勮淇℃伅--------------------------------
+
 message Comment {
-  int64 id = 1; //涓婚敭
-  int64 videoId = 2; //瑙嗛id
+  int64 id = 1;
+  int64 videoId = 2;
   int64 userId = 6;
-  string content = 3; //璇勮鍐呭
-  int64 createTime = 4; //璇ユ潯璁板綍鍒涘缓鏃堕棿
-  int64 updateTime = 5; //璇ユ潯鏈€鍚庝竴娆℃洿鏂版椂闂?  int64 isDelete = 6; //閫昏緫鍒犻櫎
+  string content = 3;
+  int64 createTime = 4;
+  int64 updateTime = 5;
 }
 
 message AddCommentReq {
@@ -28,12 +28,8 @@ message AddCommentReq {
 message AddCommentResp {
 }
 
-
-
 message DelCommentReq {
   int64 id = 1; //id
-  int64 userId = 2; //用户id
-  int64 videoId = 3; //视频id
 }
 
 message DelCommentResp {
@@ -48,7 +44,6 @@ message GetCommentByIdResp {
 }
 
 
-//--------------------------------鐐硅禐淇℃伅--------------------------------
 message Favorite {
   int64 id = 1;
   int64 videoId = 2;
@@ -68,9 +63,7 @@ message AddFavoriteResp {
 
 message UpdateFavoriteReq {
   int64 id = 1;
-  int64 videoId = 2;
-  int64 userId = 3;
-  int64 isDelete = 4;
+  int64 isDelete = 2;
 }
 
 message UpdateFavoriteResp {
@@ -85,12 +78,8 @@ message DelFavoriteReq {
 message DelFavoriteResp {
 }
 
-
-
 message SearchFavoriteReq {
-
   int64 userId = 1;
-
 }
 
 message SearchFavoriteResp {
@@ -108,24 +97,12 @@ message Video {
   int64 updateTime = 7;
 }
 
-
-
-
 message GetVideoByIdReq {
   int64 id = 1; //id
 }
 
 message GetVideoByIdResp {
   Video video = 1; //video
-}
-
-
-message GetUserFavoritedCntByIdReq {
-  int64 userID = 1; //用户id
-}
-
-message GetUserFavoritedCntByIdResp {
-  int64 cnt = 1; //用户被喜欢数
 }
 
 message GetUserPublishAndLikedCntByIdReq {
@@ -138,7 +115,7 @@ message GetUserPublishAndLikedCntByIdResp {
 }
 
 message GetVideoListByIdListReq{
-  repeated int64 videoIdList = 1;//视频id数组
+  repeated int64 videoIdList = 1;//videoId数组
 }
 
 message GetVideoListByIdListResp{
@@ -237,10 +214,11 @@ service content{
   rpc AddFavorite(AddFavoriteReq) returns (AddFavoriteResp);
   rpc UpdateFavorite(UpdateFavoriteReq) returns (UpdateFavoriteResp);
   rpc DelFavorite(DelFavoriteReq) returns (DelFavoriteResp);
-
   rpc SearchFavorite(SearchFavoriteReq) returns (SearchFavoriteResp);
 
   rpc GetVideoById(GetVideoByIdReq) returns (GetVideoByIdResp);
+  rpc GetVideoListByIdList(GetVideoListByIdListReq) returns (GetVideoListByIdListResp);
+  rpc GetUserPublishAndLikedCntById (GetUserPublishAndLikedCntByIdReq) returns (GetUserPublishAndLikedCntByIdResp);
 
 
   rpc GetFeedList(FeedListReq) returns (FeedListResp);
@@ -249,7 +227,5 @@ service content{
   rpc GetWorkCountByUserId(GetWorkCountByUserIdReq) returns (GetWorkCountByUserIdResp);
   rpc GetFavoriteCountByUserId(GetFavoriteCountByUserIdReq) returns (GetFavoriteCountByUserIdResp);
 
-  rpc GetUserFavoritedCnt(GetUserFavoritedCntByIdReq) returns (GetUserFavoritedCntByIdResp);
-  rpc GetUserPublishAndLikedCntById (GetUserPublishAndLikedCntByIdReq) returns (GetUserPublishAndLikedCntByIdResp);
-  rpc GetVideoListByIdList(GetVideoListByIdListReq) returns (GetVideoListByIdListResp);
+
 }

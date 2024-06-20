@@ -2,13 +2,10 @@ package logic
 
 import (
 	"context"
+	"doushen_by_liujun/internal/common"
 	"doushen_by_liujun/internal/util"
 	"doushen_by_liujun/service/content/rpc/internal/model"
 	"errors"
-
-	"fmt"
-
-	"log"
 
 	"time"
 
@@ -33,14 +30,16 @@ func NewAddCommentLogic(ctx context.Context, svcCtx *svc.ServiceContext) *AddCom
 }
 
 func (l *AddCommentLogic) AddComment(in *pb.AddCommentReq) (*pb.AddCommentResp, error) {
-
+	/*
+		Author：    刘洋
+		Function：  向 comment 表添加评论
+		Update：    08.28 对进入逻辑 加log
+	*/
+	l.Logger.Info("AddComment方法请求参数：", in)
 	//1. 雪花算法生成 id
-	snowflake, err1 := util.NewSnowflake(3)
+	snowflake, err1 := util.NewSnowflake(common.ContentRpcMachineId)
 	if err1 != nil {
 		return nil, errors.New("rpc-AddComment-新增评论，snowflake生成id失败")
-	}
-	if err := l.svcCtx.KqPusherClient.Push("content_rpc_addCommentLogic_AddComment_NewSnowflake_false"); err != nil {
-		log.Fatal(err)
 	}
 	snowId := snowflake.Generate()
 	//2. 新增评论信息到 comment 表项
@@ -55,16 +54,6 @@ func (l *AddCommentLogic) AddComment(in *pb.AddCommentReq) (*pb.AddCommentResp, 
 	})
 	if err != nil {
 		return nil, errors.New("rpc-AddComment-新增评论数据失败")
-	}
-
-	fmt.Println("【rpc-AddComment-新增评论数据成功】")
-
-	if err := l.svcCtx.KqPusherClient.Push("content_rpc_addCommentLogic_AddComment_Insert_false"); err != nil {
-		log.Fatal(err)
-	}
-	logx.Error("rpc-AddComment-新增评论数据成功")
-	if err := l.svcCtx.KqPusherClient.Push("content_rpc_addCommentLogic_AddComment_success"); err != nil {
-		log.Fatal(err)
 	}
 
 	return &pb.AddCommentResp{}, nil
